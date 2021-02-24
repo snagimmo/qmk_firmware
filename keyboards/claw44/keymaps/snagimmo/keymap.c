@@ -28,13 +28,13 @@ enum layer_number {
     _NUMPAD,
 };
 
-#define KC_LT1 LT(_RAISE, KC_NO)     // raise(layer1)
-#define KC_LT2 LT(_LOWER, KC_NO)     // lower(layer2)
-#define KC_LT3 LT(_NUMPAD, KC_TRNS)  // numpad(layer3)
+#define KC_LT1 LT(_RAISE, KC_NO)   // raise(layer1)
+#define KC_LT2 LT(_LOWER, KC_NO)   // lower(layer2)
+#define KC_LT3 LT(_NUMPAD, KC_NO)  // numpad(layer3)
 #define KC_C_LBR LCTL_T(KC_LBRC)   // l-ctrl
 #define KC_C_RBR RCTL_T(KC_RBRC)   // r-ctrl
-#define KC_A_LPRN ALT_T(KC_LPRN)  // l-alt
-#define KC_A_RPRN ALT_T(KC_RPRN)  // r-alt
+#define KC_A_LPRN LALT_T(KC_LPRN)  // l-alt
+#define KC_A_RPRN RALT_T(KC_RPRN)  // r-alt
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_QWERTY] = LAYOUT( \
@@ -45,43 +45,43 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|--------+--------+---------+--------+---------+--------|   |--------+---------+--------+---------+--------+--------|
         KC_LSFT, KC_Z   , KC_X    , KC_C   , KC_V    , KC_B   ,     KC_N   , KC_M    , KC_COMM, KC_DOT  , KC_SLSH, KC_RSFT,
     //`--------+--------+---------+--------+---------+--------/   \--------+---------+--------+---------+--------+--------'
-                         KC_LT2  , KC_SPC , KC_C_LBR, KC_A_LPRN,  KC_A_RPRN, KC_C_RBR, KC_ENT , KC_LT1
+                         KC_LT2   , KC_SPC , KC_C_LBR, KC_LAPO,    KC_RAPC , KC_C_RBR, KC_ENT , KC_LT1
     //                 `----------+--------+---------+--------'   `--------+---------+--------+---------'
     ),
 
     [_RAISE] = LAYOUT( \
     //,--------+--------+--------+--------+--------+--------.   ,--------+--------+--------+--------+--------+--------.
-        KC_GRV , KC_EXLM, KC_AT  , KC_HASH, KC_DLR , KC_PERC,     KC_CIRC, KC_AMPR, KC_ASTR, KC_MINS, KC_EQL , KC_DEL,
+        KC_GRV , KC_EXLM, KC_AT  , KC_HASH, KC_DLR , KC_PERC,     KC_CIRC, KC_AMPR, KC_ASTR, KC_MINS, KC_EQL , KC_DEL ,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        KC_CAPS, KC_HOME, _______, _______, _______, _______,     KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, KC_END , KC_BSLS,
+        KC_CAPS, KC_HOME, KC_NO  , KC_NO  , KC_NO  , KC_NO  ,     KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, KC_END , KC_BSLS,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        KC_LSFT, _______, _______, _______, KC_INS , _______,     _______, KC_PGDN, KC_PGUP, _______, _______, KC_RSFT,
+        KC_LSFT, KC_NO  , KC_NO  , KC_NO  , KC_INS , KC_NO  ,     KC_NO  , KC_PGDN, KC_PGUP, KC_NO  , KC_NO  , KC_RSFT,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
-                          _______, KC_LGUI, KC_LCTL, KC_LALT,     KC_RALT, KC_RCTL, _______, _______
+                          KC_NO  , KC_LGUI, KC_LCTL, KC_LALT,     KC_RALT, KC_RCTL, KC_NO  , KC_NO
     //                  `--------+--------+--------+--------'   `--------+--------+--------+--------'
     ),
 
     [_LOWER] = LAYOUT( \
     //,--------+--------+--------+--------+--------+--------.   ,--------+--------+--------+--------+--------+--------.
-        _______, KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,     KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , _______,
+        KC_NO  , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,     KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , _______,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        KC_LT3 , KC_F1  , KC_F2  , KC_F3  , KC_F4  , KC_F5  ,     KC_F6  , KC_F7  , KC_F8  , KC_F9  , KC_F10 , _______,
+        KC_LT3 , KC_F1  , KC_F2  , KC_F3  , KC_F4  , KC_F5  ,     KC_F6  , KC_F7  , KC_F8  , KC_F9  , KC_F10 , KC_NO  ,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        KC_LSFT, KC_F11 , KC_F12 , _______, _______, _______,     _______, _______, _______, _______, _______, KC_RSFT,
+        KC_LSFT, KC_F11 , KC_F12 , KC_NO  , KC_NO  , KC_NO  ,     KC_NO  , KC_NO  , KC_NO  , KC_NO  , KC_NO  , KC_RSFT,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
-                          _______, _______, KC_LCTL, KC_LALT,     KC_RALT, KC_RCTL, KC_APP , _______
+                          KC_NO  , KC_NO  , KC_LCTL, KC_LALT,     KC_RALT, KC_RCTL, KC_APP , KC_NO
     //                  `--------+--------+--------+--------'   `--------+--------+--------+--------'
     ),
 
     [_NUMPAD] = LAYOUT( \
     //,--------+--------+--------+--------+--------+--------.   ,--------+--------+--------+--------+--------+--------.
-        _______, _______, _______, _______, _______, _______,     KC_PSLS, KC_P7  , KC_P8  , KC_P9  , _______, _______,
+        KC_NO  , KC_NO  , KC_NO  , KC_NO  , KC_NO  , KC_NO  ,     KC_PSLS, KC_P7  , KC_P8  , KC_P9  , KC_NO  , _______,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        _______, _______, _______, _______, _______, _______,     KC_PAST, KC_P4  , KC_P5  , KC_P6  , KC_PEQL, _______,
+        KC_NO  , KC_NO  , KC_NO  , KC_NO  , KC_NO  , KC_NO  ,     KC_PAST, KC_P4  , KC_P5  , KC_P6  , KC_EQL , KC_NO  ,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        KC_LSFT, _______, _______, _______, _______, _______,     KC_PMNS, KC_P1  , KC_P2  , KC_P3  , KC_PDOT, KC_RSFT,
+        KC_LSFT, KC_NO  , KC_NO  , KC_NO  , KC_NO  , KC_NO  ,     KC_PMNS, KC_P1  , KC_P2  , KC_P3  , KC_PDOT, KC_RSFT,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
-                          _______, _______, _______, _______,     KC_RALT, KC_RCTL, KC_PPLS, KC_P0
+                          KC_NO  , KC_NO  , KC_LCTL, KC_LALT,     KC_RALT, KC_RCTL, KC_PPLS, KC_P0
     //                  `--------+--------+--------+--------'   `--------+--------+--------+--------'
     ),
 };
