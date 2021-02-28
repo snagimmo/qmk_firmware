@@ -20,3 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MASTER_LEFT
 #define OLED_FONT_H "keyboards/claw44/lib/glcdfont.c"
+#define TAPPING_TERM 150
+#define TAPPING_TERM_PER_KEY
+#define PERMISSIVE_HOLD
+#define PERMISSIVE_HOLD_PER_KEY
