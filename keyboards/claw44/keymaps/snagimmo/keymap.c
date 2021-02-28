@@ -34,6 +34,8 @@ enum layer_number {
 #define KC_TO3 TO(_NUMPAD)         // numpad(layer3)
 #define KC_LT1 LT(_RAISE, KC_NO)   // raise(layer1)
 #define KC_LT2 LT(_LOWER, KC_CAPS) // lower(layer2)
+#define EX_FEN C(A(S(KC_INS)))     // execute launcher(fenrir)
+#define EX_NYF G(KC_N)             // execute explorer(NyanFi)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_QWERTY] = LAYOUT( \
@@ -52,7 +54,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //,--------+--------+--------+--------+--------+--------.   ,--------+--------+--------+--------+--------+--------.
         KC_GRV , KC_EXLM, KC_AT  , KC_HASH, KC_DLR , KC_PERC,     KC_CIRC, KC_AMPR, KC_ASTR, KC_MINS, KC_EQL , KC_DEL ,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        KC_APP , XXXXXXX, KC_LCBR, KC_LBRC, KC_LPRN, XXXXXXX,     KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, XXXXXXX, KC_BSLS,
+        KC_APP , XXXXXXX, KC_LCBR, KC_LBRC, KC_LPRN, XXXXXXX,     KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, EX_FEN , KC_BSLS,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
         _______, XXXXXXX, KC_RCBR, KC_RBRC, KC_RPRN, XXXXXXX,     KC_HOME, KC_PGDN, KC_PGUP, KC_END , XXXXXXX, _______,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
@@ -66,7 +68,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
         KC_TO0 , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   ,     KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , XXXXXXX,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        _______, KC_F11 , KC_F12 , XXXXXXX, KC_INS , XXXXXXX,     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______,
+        _______, KC_F11 , KC_F12 , XXXXXXX, KC_INS , XXXXXXX,     EX_NYF , XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
                           KC_CAPS, _______, _______, _______,     _______, _______, _______, KC_TO3
     //                  `--------+--------+--------+--------'   `--------+--------+--------+--------'
