@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include QMK_KEYBOARD_H
 #include <stdio.h>
 #include "../../lib/layers.c"
+#include "../../lib/invader.c"
 
 // Each layer gets a name for readability, which is then used in the keymap matrix below.
 // The underscores don't mean anything - you can have a layer called STUFF or any other name.
@@ -30,7 +31,9 @@ enum layer_number {
 };
 
 enum custom_keycodes {
-    GM_INV = SAFE_RANGE
+    MY_LCAP = SAFE_RANGE,
+    MY_LT2,
+    GM_INV
 };
 
 #define KC_TO0 TO(_QWERTY)         // qwerty(layer0)
@@ -44,15 +47,15 @@ enum custom_keycodes {
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_QWERTY] = LAYOUT( \
-    //,--------+--------+---------+--------+---------+--------.   ,--------+---------+--------+---------+--------+--------.
-        KC_ESC , KC_Q   , KC_W    , KC_E   , KC_R    , KC_T   ,     KC_Y   , KC_U    , KC_I   , KC_O    , KC_P   , KC_BSPC,
-    //|--------+--------+---------+--------+---------+--------|   |--------+---------+--------+---------+--------+--------|
-        KC_TAB , KC_A   , KC_S    , KC_D   , KC_F    , KC_G   ,     KC_H   , KC_J    , KC_K   , KC_L    , KC_SCLN, KC_QUOT,
-    //|--------+--------+---------+--------+---------+--------|   |--------+---------+--------+---------+--------+--------|
-        KC_LSFT, KC_Z   , KC_X    , KC_C   , KC_V    , KC_B   ,     KC_N   , KC_M    , KC_COMM, KC_DOT  , KC_SLSH, KC_RSFT,
-    //`--------+--------+---------+--------+---------+--------/   \--------+---------+--------+---------+--------+--------'
-                          KC_LT2  , KC_LALT, KC_LCTL , KC_SPC ,     KC_ENT , KC_RCTL , KC_RALT, KC_LT1
-    //                 `----------+--------+---------+--------'   `--------+---------+--------+---------'
+    //,--------+--------+--------+--------+--------+--------.   ,--------+--------+--------+--------+--------+--------.
+        KC_ESC , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   ,     KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_BSPC,
+    //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
+        KC_TAB , KC_A   , KC_S   , KC_D   , KC_F   , KC_G   ,     KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_QUOT,
+    //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
+        KC_LSFT, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   ,     KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RSFT,
+    //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
+                          MY_LT2 , KC_LALT, KC_LCTL, KC_SPC ,     KC_ENT , KC_RCTL, KC_RALT, KC_LT1
+    //                 `---------+--------+--------+--------'   `--------+--------+--------+--------'
     ),
 
     [_RAISE] = LAYOUT( \
@@ -63,7 +66,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
         _______, XXXXXXX, KC_RCBR, KC_RPRN, KC_RBRC, XXXXXXX,     KC_HOME, KC_PGDN, KC_PGUP, KC_END , XXXXXXX, _______,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
-                          KC_TO2 , _______, _______, KC_LGUI,     XXXXXXX, _______, _______, XXXXXXX
+                          MY_LCAP, _______, _______, KC_LGUI,     XXXXXXX, _______, _______, XXXXXXX
     //                  `--------+--------+--------+--------'   `--------+--------+--------+--------'
     ),
 
@@ -75,7 +78,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
         _______, KC_F11 , KC_F12 , XXXXXXX, KC_INS , XXXXXXX,     EX_NYF , XXXXXXX, _______, _______, _______, _______,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
-                          KC_CAPS, _______, _______, _______,     _______, _______, _______, KC_TO3
+                          MY_LCAP, _______, _______, _______,     _______, _______, _______, KC_TO3
     //                  `--------+--------+--------+--------'   `--------+--------+--------+--------'
     ),
 
@@ -87,14 +90,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
         _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,     KC_PMNS, KC_P1  , KC_P2  , KC_P3  , KC_PDOT, _______,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
-                          KC_CAPS, _______, _______, _______,     _______, _______, KC_PPLS, KC_P0
+                          MY_LCAP, _______, _______, _______,     _______, _______, KC_PPLS, KC_P0
     //                  `--------+--------+--------+--------'   `--------+--------+--------+--------'
     ),
 };
 
 #ifdef OLED_DRIVER_ENABLE
 
-static bool rotation_state = false;
+static uint8_t rotation_state = 0;
+static uint8_t caps_state = 0;
+static uint8_t kana_state = 0;
 
 void write_layer_block(const unsigned char* p, uint16_t read_index, uint16_t write_index) {
     unsigned char raw_byte;
@@ -106,9 +111,10 @@ void write_layer_block(const unsigned char* p, uint16_t read_index, uint16_t wri
 }
 
 void write_layer_blocks(const unsigned char* p, uint8_t row, uint8_t col, uint16_t read_index, uint16_t write_index) {
+    uint8_t num_col = rotation_state ? 5 : 21;
     for (int i = 0; i < row; i++) {
         read_index  += (i * 32);
-        write_index += (i * 5);
+        write_index += (i * num_col);
         for (int j = 0; j < col; j++) {
             write_layer_block(p, read_index + j, write_index + j);
         }
@@ -135,8 +141,13 @@ void render_layer_state(void) {
 }
 
 void render_caps_state(uint8_t caps_state) {
-    caps_state ? write_layer_blocks(layer_char, 2, 5, 0x41, 15)
-               : write_layer_blocks(layer_char, 2, 5, 0x46, 15);
+    caps_state ? write_layer_blocks(layer_char, 2, 5, 0x41, 20)  // upper
+               : write_layer_blocks(layer_char, 2, 5, 0x46, 20); // lower
+}
+
+void render_kana_state(uint8_t kana_state) {
+    kana_state ? write_layer_blocks(layer_char, 2, 3, 0x5d, 41)  // kana
+               : write_layer_blocks(layer_char, 2, 3, 0x5a, 41); // eisu
 }
 
 void render_logo(void) {
@@ -178,6 +189,7 @@ void render_logo(void) {
 void oled_task_user(void) {
     if (is_keyboard_master()) {
         render_layer_state();
+        render_kana_state(kana_state);
         /* oled_write_ln(read_keylog(), false); */
         /* oled_write_ln(read_keylogs(), false); */
     } else {
@@ -187,24 +199,79 @@ void oled_task_user(void) {
     }
 }
 
+void press_capslock(uint8_t temp_mod){
+    clear_mods();
+    if (temp_mod & MOD_MASK_SHIFT) {
+        tap_code16(S(KC_CAPS));
+    } else if (temp_mod & MOD_MASK_CA) {
+        tap_code(KC_CAPS);
+        kana_state ^= 1; // Toggle IME(kana/eisu) state
+    } else {
+        tap_code(KC_CAPS);
+        kana_state ^= 1; // Toggle IME(kana/eisu) state
+    }
+    set_mods(temp_mod);
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (record->event.pressed) {
-        /* switch (keycode) { */
-            /* default: */
-            /*     set_keylog(keycode, record); */
-        /* } */
+    static uint8_t checker_numpad = 0;
+    static uint8_t checker_caps = 0;
+    uint8_t temp_mod;
+    temp_mod = get_mods();
+    switch (keycode) {
+        case KC_CAPS:
+            if (record->event.pressed) {
+                return false; // No change is reflected until you release CapsLock
+            } else {
+                press_capslock(temp_mod);
+            }
+            break;
+        case MY_LCAP:
+            if (record->event.pressed) { tap_code16(S(KC_CAPS)); }
+            break;
+
+        // Customized layer-tapping settings
+        case MY_LT2:
+            if (record->event.pressed) {
+                layer_state_set(0b0100);
+                return false; // Keep staying at specified layer while holding key
+            } else {
+                // Check whether Numpad-jumping key is pressed
+                if (checker_numpad) {
+                    layer_state_set(0b1000); // Switch to the layer3 (_NUMPAD)
+                    checker_numpad = 0;
+                    return true;
+                } else {
+                    layer_state_set(0b0000); // Back to the default layer (_QWERTY)
+                }
+
+                // Check whether modifier keys(Shift/Alt/Ctrl) is pressed
+                if (!checker_caps) { press_capslock(temp_mod); }
+                checker_caps = 0; // Even if 1, force it to be 0
+            }
+            break;
+        case KC_TO3:
+            if (record->event.pressed) { checker_numpad = 1; }
+            break;
+        case KC_F1 ... KC_F12: // Function keys
+        case KC_1 ... KC_0: // Num 1-0
+        case KC_INS:
+        case EX_NYF:
+            if (record->event.pressed) { checker_caps = 1; }
+            break;
+        /* default: */
+        /*     set_keylog(keycode, record); */
     }
     return true;
 }
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     if (!is_keyboard_master()) return OLED_ROTATION_180;
-    rotation_state = true;
+    rotation_state = 1;
     return OLED_ROTATION_270;
 }
 
 bool led_update_user(led_t led_state) {
-    static uint8_t caps_state = 0;
     if (caps_state != led_state.caps_lock) {
         caps_state = led_state.caps_lock;
         render_caps_state(caps_state);
