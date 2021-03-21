@@ -259,6 +259,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case EX_NYF:
             if (record->event.pressed) { checker_caps = 1; }
             break;
+        case EX_FEN:
+            // Always 'eisu' when you execute launcher
+            if (record->event.pressed) { kana_state = 0; }
+            break;
         /* default: */
         /*     set_keylog(keycode, record); */
     }
