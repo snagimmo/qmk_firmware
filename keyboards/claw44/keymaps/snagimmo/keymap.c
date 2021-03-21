@@ -15,8 +15,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include QMK_KEYBOARD_H
 #include <stdio.h>
-#include "../../lib/layers.c"
-#include "../../lib/invader.c"
+#include "lib/glcdfont.c"
+#include "lib/layers.c"
+#ifdef GAMING_CLAW
+  #include "lib/invader.c"
+#endif //GAMING_CLAW
 
 // Each layer gets a name for readability, which is then used in the keymap matrix below.
 // The underscores don't mean anything - you can have a layer called STUFF or any other name.
@@ -86,7 +89,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //,--------+--------+--------+--------+--------+--------.   ,--------+--------+--------+--------+--------+--------.
         _______, RESET  , XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,     KC_PSLS, KC_P7  , KC_P8  , KC_P9  , KC_EQL , _______,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
-        KC_TO0 , XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,     KC_PAST, KC_P4  , KC_P5  , KC_P6  , XXXXXXX, KC_PSCR,
+        KC_TO0 , XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, GM_INV ,     KC_PAST, KC_P4  , KC_P5  , KC_P6  , XXXXXXX, KC_PSCR,
     //|--------+--------+--------+--------+--------+--------|   |--------+--------+--------+--------+--------+--------|
         _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,     KC_PMNS, KC_P1  , KC_P2  , KC_P3  , KC_PDOT, _______,
     //`--------+--------+--------+--------+--------+--------/   \--------+--------+--------+--------+--------+--------'
@@ -100,6 +103,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 static uint8_t rotation_state = 0;
 static uint8_t caps_state = 0;
 static uint8_t kana_state = 0;
+static uint8_t gaming_mode = 0;
 
 void write_layer_block(const unsigned char* p, uint16_t read_index, uint16_t write_index) {
     unsigned char raw_byte;
@@ -110,11 +114,12 @@ void write_layer_block(const unsigned char* p, uint16_t read_index, uint16_t wri
     }
 }
 
-void write_layer_blocks(const unsigned char* p, uint8_t row, uint8_t col, uint16_t read_index, uint16_t write_index) {
+void write_layer_blocks(const unsigned char* p, uint8_t row, uint8_t col, uint16_t param_read, uint16_t param_write) {
     uint8_t num_col = rotation_state ? 5 : 21;
+    uint16_t read_index, write_index;
     for (int i = 0; i < row; i++) {
-        read_index  += (i * 32);
-        write_index += (i * num_col);
+        read_index  = param_read + (i * 32);
+        write_index = param_write + (i * num_col);
         for (int j = 0; j < col; j++) {
             write_layer_block(p, read_index + j, write_index + j);
         }
@@ -140,20 +145,24 @@ void render_layer_state(void) {
     }
 }
 
-void render_caps_state(uint8_t caps_state) {
+void render_caps_state(void) {
     caps_state ? write_layer_blocks(layer_char, 2, 5, 0x41, 20)  // upper
                : write_layer_blocks(layer_char, 2, 5, 0x46, 20); // lower
 }
 
-void render_kana_state(uint8_t kana_state) {
+void render_kana_state(void) {
     kana_state ? write_layer_blocks(layer_char, 2, 3, 0x5d, 41)  // kana
                : write_layer_blocks(layer_char, 2, 3, 0x5a, 41); // eisu
 }
 
 void render_logo(void) {
-    // TODO: Call write_layer_blocks()
-    static const char PROGMEM logo[] = {0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf, 0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0};
-    oled_write_P(logo, false);
+    rotation_state = 0; // horizontal (logo)
+#    ifdef GAMING_CLAW
+        write_layer_blocks(invader_char, 3, 21, 0x80, 0); // gaming mode
+#    else
+        write_layer_blocks(font, 3, 21, 0x80, 0);         // claw44 logo
+#    endif
+    rotation_state = 1; // vertical (main)
 }
 
 /* char keylog_str[24]  = {}; */
@@ -189,25 +198,23 @@ void render_logo(void) {
 void oled_task_user(void) {
     if (is_keyboard_master()) {
         render_layer_state();
-        render_kana_state(kana_state);
+        render_kana_state();
         /* oled_write_ln(read_keylog(), false); */
         /* oled_write_ln(read_keylogs(), false); */
     } else {
-        // TODO: Change temporarily rotation_state into false (using XOR operator)
         render_logo();
-        // TODO: Restore rotation_state to the 'former' state (using XOR operator)
     }
 }
 
 void press_capslock(uint8_t temp_mod){
     clear_mods();
     if (temp_mod & MOD_MASK_SHIFT) {
-        tap_code16(S(KC_CAPS));
+        tap_code16(S(KC_CAPS)); // Shift + CapsLock
     } else if (temp_mod & MOD_MASK_CA) {
-        tap_code(KC_CAPS);
+        tap_code(KC_CAPS); // CapsLock (that ignores Ctrl/Alt)
         kana_state ^= 1; // Toggle IME(kana/eisu) state
     } else {
-        tap_code(KC_CAPS);
+        tap_code(KC_CAPS); // CapsLock
         kana_state ^= 1; // Toggle IME(kana/eisu) state
     }
     set_mods(temp_mod);
@@ -263,6 +270,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             // Always 'eisu' when you execute launcher
             if (record->event.pressed) { kana_state = 0; }
             break;
+        case GM_INV:
+            // Toggle gaming mode
+            if (!record->event.pressed) { gaming_mode ^= 1; }
+            break;
         /* default: */
         /*     set_keylog(keycode, record); */
     }
@@ -278,7 +289,7 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 bool led_update_user(led_t led_state) {
     if (caps_state != led_state.caps_lock) {
         caps_state = led_state.caps_lock;
-        render_caps_state(caps_state);
+        render_caps_state();
     }
     return false;
 }
