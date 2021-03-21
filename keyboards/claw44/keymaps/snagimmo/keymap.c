@@ -107,10 +107,13 @@ static uint8_t gaming_mode = 0;
 
 void write_layer_block(const unsigned char* p, uint16_t read_index, uint16_t write_index) {
     unsigned char raw_byte;
-    uint8_t num_row = rotation_state ? (write_index / 5) : (write_index / 21);
-    for (int i = 0; i < 6; i++) {
-        raw_byte = pgm_read_byte(p + (read_index * 6 + i));
-        oled_write_raw_byte(raw_byte, write_index * 6 + i + (num_row * 2)); // skip 2px
+    uint8_t num_row = rotation_state ? (write_index / (OLED_DISPLAY_HEIGHT / OLED_FONT_WIDTH)) // write_index / 5 (default)
+                                     : (write_index / (OLED_DISPLAY_WIDTH / OLED_FONT_WIDTH)); // write_index / 21 (default)
+    uint8_t skipped_pixel = rotation_state ? (OLED_DISPLAY_HEIGHT % OLED_FONT_WIDTH) // 2px (default)
+                                           : (OLED_DISPLAY_WIDTH % OLED_FONT_WIDTH); // 2px (default)
+    for (int i = 0; i < OLED_FONT_WIDTH; i++) {
+        raw_byte = pgm_read_byte(p + (read_index * OLED_FONT_WIDTH + i));
+        oled_write_raw_byte(raw_byte, write_index * OLED_FONT_WIDTH + i + (num_row * skipped_pixel)); // skip 2px (default)
     }
 }
 
