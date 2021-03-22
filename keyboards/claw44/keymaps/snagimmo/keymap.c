@@ -100,31 +100,39 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #ifdef OLED_DRIVER_ENABLE
 
-static uint8_t rotation_state = 0;
-static uint8_t caps_state = 0;
-static uint8_t kana_state = 0;
+static uint8_t rotation_state, buf_blocks, skipped_pixel;
+static uint8_t caps_state  = 0;
+static uint8_t kana_state  = 0;
 static uint8_t gaming_mode = 0;
 
-void write_layer_block(const unsigned char* p, uint16_t read_index, uint16_t write_index) {
-    unsigned char raw_byte;
-    uint8_t num_row = rotation_state ? (write_index / (OLED_DISPLAY_HEIGHT / OLED_FONT_WIDTH)) // write_index / 5 (default)
-                                     : (write_index / (OLED_DISPLAY_WIDTH / OLED_FONT_WIDTH)); // write_index / 21 (default)
-    uint8_t skipped_pixel = rotation_state ? (OLED_DISPLAY_HEIGHT % OLED_FONT_WIDTH) // 2px (default)
-                                           : (OLED_DISPLAY_WIDTH % OLED_FONT_WIDTH); // 2px (default)
-    for (int i = 0; i < OLED_FONT_WIDTH; i++) {
-        raw_byte = pgm_read_byte(p + (read_index * OLED_FONT_WIDTH + i));
-        oled_write_raw_byte(raw_byte, write_index * OLED_FONT_WIDTH + i + (num_row * skipped_pixel)); // skip 2px (default)
+void switch_rotation(bool on) {
+    if (on) {
+        rotation_state = 1; // vertical
+        buf_blocks     = OLED_DISPLAY_HEIGHT / OLED_FONT_WIDTH; // 5 (default)
+        skipped_pixel  = OLED_DISPLAY_HEIGHT % OLED_FONT_WIDTH; // 2px (default)
+    } else {
+        rotation_state = 0; // horizontal
+        buf_blocks     = OLED_DISPLAY_WIDTH / OLED_FONT_WIDTH; // 21 (default)
+        skipped_pixel  = OLED_DISPLAY_WIDTH % OLED_FONT_WIDTH; // 2px (default)
     }
 }
 
-void write_layer_blocks(const unsigned char* p, uint8_t row, uint8_t col, uint16_t param_read, uint16_t param_write) {
-    uint8_t num_col = rotation_state ? 5 : 21;
+void write_font_block(const unsigned char* p, uint16_t read_index, uint16_t write_index) {
+    unsigned char raw_byte;
+    uint8_t line_number = write_index / buf_blocks; // Get a line number to write
+    for (int i = 0; i < OLED_FONT_WIDTH; i++) {
+        raw_byte = pgm_read_byte(p + (read_index * OLED_FONT_WIDTH + i));
+        oled_write_raw_byte(raw_byte, write_index * OLED_FONT_WIDTH + i + (line_number * skipped_pixel)); // Skip 2*N px every line (default)
+    }
+}
+
+void write_font_blocks(const unsigned char* p, uint8_t row, uint8_t col, uint16_t param_r_idx, uint16_t param_w_idx) {
     uint16_t read_index, write_index;
     for (int i = 0; i < row; i++) {
-        read_index  = param_read + (i * 32);
-        write_index = param_write + (i * num_col);
+        read_index  = param_r_idx  + (i * 32); // Read blocks per line from OLED font (default 32 blocks)
+        write_index = param_w_idx  + (i * buf_blocks); // Write blocks per line to OLED buffer (default 5 or 21 blocks)
         for (int j = 0; j < col; j++) {
-            write_layer_block(p, read_index + j, write_index + j);
+            write_font_block(p, read_index + j, write_index + j);
         }
     }
 }
@@ -132,47 +140,47 @@ void write_layer_blocks(const unsigned char* p, uint8_t row, uint8_t col, uint16
 void render_layer_state(void) {
     switch (get_highest_layer(layer_state)) {
         case _QWERTY:
-            write_layer_blocks(layer_char, 2, 5, 0x01, 0);
+            write_font_blocks(layer_char, 2, 5, 0x01, 0);
             break;
         case _RAISE:
-            write_layer_blocks(layer_char, 2, 5, 0x06, 0);
+            write_font_blocks(layer_char, 2, 5, 0x06, 0);
             break;
         case _LOWER:
-            write_layer_blocks(layer_char, 2, 5, 0x0b, 0);
+            write_font_blocks(layer_char, 2, 5, 0x0b, 0);
             break;
         case _NUMPAD:
-            write_layer_blocks(layer_char, 2, 5, 0x10, 0);
+            write_font_blocks(layer_char, 2, 5, 0x10, 0);
             break;
         default:
-            write_layer_blocks(layer_char, 2, 5, 0x15, 0);
+            write_font_blocks(layer_char, 2, 5, 0x15, 0);
     }
 }
 
 void render_caps_state(void) {
-    caps_state ? write_layer_blocks(layer_char, 2, 5, 0x41, 20)  // upper
-               : write_layer_blocks(layer_char, 2, 5, 0x46, 20); // lower
+    caps_state ? write_font_blocks(layer_char, 2, 5, 0x41, 20)  // upper
+               : write_font_blocks(layer_char, 2, 5, 0x46, 20); // lower
 }
 
 void render_kana_state(void) {
-    kana_state ? write_layer_blocks(layer_char, 2, 3, 0x5d, 41)  // kana
-               : write_layer_blocks(layer_char, 2, 3, 0x5a, 41); // eisu
+    kana_state ? write_font_blocks(layer_char, 2, 3, 0x5d, 41)  // kana
+               : write_font_blocks(layer_char, 2, 3, 0x5a, 41); // eisu
 }
 
 void render_logo(void) {
-    rotation_state = 0; // horizontal (logo)
+    switch_rotation(0); // horizontal (logo)
 #    ifdef GAMING_CLAW
-        write_layer_blocks(invader_char, 3, 21, 0x80, 0); // gaming mode
+        write_font_blocks(invader_char, 3, 21, 0x80, 0); // gaming mode
 #    else
-        write_layer_blocks(font, 3, 21, 0x80, 0);         // claw44 logo
+        write_font_blocks(font, 3, 21, 0x80, 0);         // claw44 logo
 #    endif
-    rotation_state = 1; // vertical (main)
+    switch_rotation(1); // vertical (main)
 }
 
 /* char keylog_str[24]  = {}; */
 /* char keylogs_str[50] = {}; */
 /* int  keylogs_str_idx = 0; */
-
-/* const char code_to_name[60] = {' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'R', 'E', 'B', 'T', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ';', '\'', ' ', ',', '.', '/', ' ', ' ', ' '}; */
+/* char field_char[50] = {}; */
+/* int field_char_idx = 0; */
 
 /* void set_keylog(uint16_t keycode, keyrecord_t *record) { */
 /*     char name = ' '; */
@@ -285,7 +293,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     if (!is_keyboard_master()) return OLED_ROTATION_180;
-    rotation_state = 1;
+    switch_rotation(1); // vertical (main)
     return OLED_ROTATION_270;
 }
 
